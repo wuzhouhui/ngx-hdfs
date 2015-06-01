@@ -104,14 +104,14 @@ hdfsBuilderSetNameNodePort().
 
 2.5.2 sample configuration
 
-	localhost /hdfs {
-            hdfs namenode=default;
-	}
+    localhost /hdfs {
+        hdfs namenode=default;
+    }
 
 or 
-	location /hdfs {
-            hdfs namenode=default username=dell port=0;
-        }
+    location /hdfs {
+        hdfs namenode=default username=dell port=0;
+    }
 
 "namenode=default" means the Nginx would use the HDFS runs in localhost,
 and use the configuration defined in hdfs configuration file. "port" 
