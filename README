@@ -1,0 +1,139 @@
+                                Niginx On HDFS
+
+1. What It Is?
+
+Nginx Oh HDFS is a Nginx extension module, for nginx support HDFS reading.
+After install it into Nginx, when resource requested is in HDFS, Nginx can
+automatically get resource from HDFS and send it to you.
+
+2. How To Install It?
+
+2.1 download Nginx, hadoop and JDK
+
+Goto the official web site to download nginx-1.8.0, hadoop-2.6.0 and newest
+JDK. Because the nginx-hdfs module is written and tested in nginx-1.8.0
+and hadoop-2.6.0, so you'd better download the same version as we mentioned
+before. nginx-hdfs needs hdfs of hadoop, and hadoop needs JDK.
+
+2.2 Install Hadoop, JDK and set environment variables.
+
+2.2.1 JDK
+
+Install JDK to you system. After it, set environment variables about java
+in /etc/profile, we have to set JAVA_HOME and JRE_HOME. for example, we can
+add two environment variables following to /etc/profile:
+
+    export JAVA_HOME=/usr/local/jdk1.8.0_40
+    export JRE_HOME=$JAVA_HOME/jre
+
+The value of JAVA_HOME and JRE_HOME is determined by JDK install path.
+
+2.2.2 Hadoop
+
+Decompress hadoop-2.6.0 to a directory. Add following environment variables to
+/etc/profile:
+
+    export HADOOP_HOME=/home/dell/usr/hadoop-2.6.0
+    export HADOOP_PREFIX=/home/dell/usr/hadoop-2.6.0
+    export LD_LIBRARY_PATH=$HADOOP_HOME/lib/native:$JRE_HOME/lib/i386/server
+    export CLASSPATH=$CLASSPATH:`$HADOOP_HOME/bin/hadoop classpath --glob`
+
+The value of environment variables is determined by installing path of
+software and the version.
+
+2.3 Compile Nginx and Configure
+
+Decompress Nginx-1.8.0 to a directory. Before compile nginx and install it,
+we have a lot work to do.
+
+2.3.1 compile and install Nginx with nginx-hdfs module.
+
+Goto to directory of Nginx-1.8.0 and run configure like this:
+
+    ./configure --add-module=path/to/your/new/module/directory
+
+This command would add nginx-hdfs module into Nginx. for example, if I put
+nginx module's files in /home/dell/nginx-hdfs, I would typed:
+
+    ./configure --add-module=/home/dell/nginx-hdfs
+
+Then you can compile nginx and install it by typing "make" and
+"make install". If you OS is 32-bit, you probably got an error, like:
+
+/usr/bin/ld: skipping incompatible
+/home/dell/usr/hadoop-2.6.0/lib/native/libhdfs.so when searching for -lhdfs
+/usr/bin/ld: skipping incompatible
+/home/dell/usr/hadoop-2.6.0/lib/native/libhdfs.a when searching for -lhdfs
+/usr/bin/ld: cannot find -lhdfs
+collect2: error: ld returned 1 exit status
+make[1]: *** [objs/nginx] Error 1
+make[1]: Leaving directory `/home/dell/mnt/nginx-1.8.0'
+make: *** [build] Error 2
+
+Override $HADOOP_HOME/lib/native/ with native/ contained in our module
+source code directory, just type:
+
+    tar -zxf hadoop-native-32bit.tar.gz
+    cp -r nginx-hdfs/native/ $HADOOP_HOME/lib/
+
+and compile again, the error would gone.
+
+2.4.1 configure nginx 
+
+Open nginx configuration file (generally, it stores in /usr/local/nginx/ 
+conf/nginx.conf). Adding two lines following into nginx.conf:
+
+    env CLASSPATH;
+    env JAVA_HOME;
+
+2.5 directive about nginx-hdfs module 
+
+2.5.1 syntax
+
+syntax:    hdfs namenode=<NAMENODE> [username=<USER>] [port=<PORT>]
+default:   NONE
+context:   location
+
+This directive enabling nginx-hdfs module at a given location. The only
+required parameter is "namenode", for specifying the HDFS you want to use.
+"username" specifying the user name when connecting with HDFS. "port"
+specifys the port when connecting with HDFS. The more details you can
+reference hdfs.h in ${HADOOP_HOME}/include/hdfs.h, function
+hdfsBuilderSetNameNode(), hdfsBuilderSetUserName() and
+hdfsBuilderSetNameNodePort(). 
+
+2.5.2 sample configuration
+
+	localhost /hdfs {
+            hdfs namenode=default;
+	}
+
+or 
+	location /hdfs {
+            hdfs namenode=default username=dell port=0;
+        }
+
+"namenode=default" means the Nginx would use the HDFS runs in localhost,
+and use the configuration defined in hdfs configuration file. "port" 
+
+3. how to use it.
+
+Start Nginx. If you want to GET /index.html in HDFS (if there is no
+/index.html in HDFS, you would got an 404 response), you should type
+http://localhost/hdfs/index.html in the address bar of web browser. 
+
+4.  Known Issues / TODO / Things You Should Hack On
+
+Currently, we only support GET, HEAD request of http. When displayed in web
+browser, we only support text/html, text/plain and image/jpeg. We still
+have a lot work to do.
+
+5. Reference 
+
+http://www.evanmiller.org/nginx-modules-guide.html
+https://www.packtpub.com/networking-and-servers/nginx-module-extension
+
+6. Contact us 
+
+wuzhouhui250@gmail.com 
+

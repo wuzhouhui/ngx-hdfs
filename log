@@ -1,8 +1,0 @@
-remember ldconfig
-
-worker's user is nobody
-
-note nginx config file
-
-by default, nginx process remove all env variables from parent
-
