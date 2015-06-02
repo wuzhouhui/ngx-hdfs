@@ -114,7 +114,8 @@ or
     }
 
 "namenode=default" means the Nginx would use the HDFS runs in localhost,
-and use the configuration defined in hdfs configuration file. "port" 
+and use the configuration defined in hdfs configuration file. Generally, 
+"port" is set to zero.
 
 3. how to use it.
 
