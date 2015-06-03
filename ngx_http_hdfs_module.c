@@ -51,14 +51,14 @@ static ngx_command_t ngx_http_hdfs_commands[] = {
     ngx_null_command,
 };
 static ngx_http_module_t ngx_http_hdfs_ctx = {
-    NULL,                               /* preconfiguration */
-    NULL,                               /* postconfiguration */
-    NULL,                               /* creating the main conf */
-    NULL,                               /* initializing the main conf */
-    NULL,                               /* creating the server conf */
-    NULL,                               /* merging it with the main conf */
-    ngx_http_hdfs_create_loc_conf,      /* creating the location conf */
-    NULL,                               /* mergint it with the server conf */
+    NULL,                             /* preconfiguration */
+    NULL,                             /* postconfiguration */
+    NULL,                             /* creating the main conf */
+    NULL,                             /* initializing the main conf */
+    NULL,                             /* creating the server conf */
+    NULL,                             /* merging it with the main conf */
+    ngx_http_hdfs_create_loc_conf,    /* creating the location conf */
+    NULL,                             /* mergint it with the server conf */
 };
 
 ngx_module_t ngx_http_hdfs_module = {
@@ -242,7 +242,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
         if ((ret = ngx_http_send_header(r)) != NGX_OK)
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
                 "get_and_head: ngx_http_send_header failed");
-	goto clean;
+        goto clean;
     }
 
     /* the file(dir) is a file */
