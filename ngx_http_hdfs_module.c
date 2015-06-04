@@ -37,7 +37,6 @@ static u_char *ngx_http_hdfs_get_path(u_char *);
 static ngx_int_t ngx_http_hdfs_handle_empty(ngx_http_request_t *);
 static ngx_int_t ngx_http_hdfs_rd_chk(ngx_http_request_t *, hdfsFileInfo *,
         ngx_str_t *);
-static ngx_int_t ngx_http_hdfs_filetype(const char *);
 
 static ngx_command_t ngx_http_hdfs_commands[] = {
     {
@@ -486,29 +485,6 @@ ngx_http_hdfs_rd_chk(ngx_http_request_t *r, hdfsFileInfo *info,
             "rd_chk: file permission = %d, perm=%d, %d", info->mPermissions,
             perm, info->mPermissions >> 6);
     return(perm & 4);
-}
-
-/*
- * determine the type of file according suffix name. Currently,
- * we only recognize *jpg(jpeg) and *.html(htm), in addition to 
- * this, we considered they are text filt.
- */
-static ngx_int_t
-ngx_http_hdfs_filetype(const char *file_name)
-{
-    if (!file_name || !file_name[0])
-        return(UNKNOW_FILE);
-
-    char    *ptr;
-
-    if (!(ptr = strrchr(file_name, '.')))
-        return(PLAIN);
-    ptr++;
-    if (!ngx_strcmp(ptr, "html") || !ngx_strcmp(ptr, "htm"))
-        return(HTML);
-    if (!ngx_strcmp(ptr, "jpg") || !ngx_strcmp(ptr, "jpeg"))
-        return(IMAGE);
-    return(PLAIN);
 }
 
 /*
