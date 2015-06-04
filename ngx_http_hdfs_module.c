@@ -215,24 +215,10 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
     /* constructing responce header according the type of file */
     ngx_log_error(NGX_LOG_DEBUG, r->connection->log, 0, "get_and_head: "
             "file_info->mName = %s", file_info->mName);
-    switch (ngx_http_hdfs_filetype(file_info->mName)) {
-    case HTML:
-        r->headers_out.content_type_len     = sizeof("text/html") - 1;
-        r->headers_out.content_type.len     = sizeof("text/html") - 1;
-        r->headers_out.content_type.data    = (u_char *)"text/html";
-        break;
-    case PLAIN:
-        r->headers_out.content_type_len     = sizeof("text/plain") - 1;
-        r->headers_out.content_type.len     = sizeof("text/plain") - 1;
-        r->headers_out.content_type.data    = (u_char *)"text/plain";
-        break;
-    case IMAGE:
-        r->headers_out.content_type_len     = sizeof("image/jpeg") - 1;
-        r->headers_out.content_type.len     = sizeof("image/jpeg") - 1;
-        r->headers_out.content_type.data    = (u_char *)"image/jpeg";
-        break;
-    default:
-        ret = NGX_HTTP_NOT_ALLOWED;
+    if ((ret = ngx_http_set_content_type(r)) != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "get_and_head: "
+                "set_content_type failed");
+        goto clean;
     }
     r->headers_out.status   = NGX_HTTP_OK;
     r->headers_out.content_length_n = file_info->mSize;
