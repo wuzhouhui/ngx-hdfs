@@ -125,9 +125,8 @@ http://localhost/hdfs/index.html in the address bar of web browser.
 
 4.  Known Issues / TODO / Things You Should Hack On
 
-Currently, we only support GET, HEAD request of http. When displayed in web
-browser, we only support text/html, text/plain and image/jpeg. We still
-have a lot work to do.
+Currently, we only support GET, HEAD request of http.  We still have a
+lot of work to do.
 
 5. Reference 
 
