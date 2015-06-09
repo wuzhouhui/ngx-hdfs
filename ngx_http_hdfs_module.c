@@ -284,7 +284,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
         }
     } else if (file_info->mKind == kObjectKindDirectory) {
         hdfsFreeFileInfo(file_info, num);
-        if (!(file_info = hdfsListDirectory(fs, (char *)path, &num))) {
+        if (!(file_info = hdfsListDirectory(fs, (char *)path, (int *)&num))) {
             if (num) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                         "get_and_head: hdfsListDirectory failed, %s",
