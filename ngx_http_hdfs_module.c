@@ -9,6 +9,8 @@
 #include <error.h>
 #include <stddef.h>
 #include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
 /* default namenode of hdfs */
 #define NAMENODE_DEL    "default"
@@ -18,7 +20,9 @@
 /* the HDFS_PREFIX should be removed from request */
 #define HDFS_PREFIX     "/hdfs"
 #define BUFSZ           (1 << 12)
+#define MAXLINE         256
 #define UNKNOW_FILE     0
+#define WIDTH           16
 #define PLAIN           1
 #define HTML            2
 #define IMAGE           3
@@ -37,6 +41,10 @@ static u_char *ngx_http_hdfs_get_path(u_char *);
 static ngx_int_t ngx_http_hdfs_handle_empty(ngx_http_request_t *);
 static ngx_int_t ngx_http_hdfs_rd_chk(ngx_http_request_t *, hdfsFileInfo *,
         ngx_str_t *);
+
+static char *perm[] = {
+    "---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx",
+};
 
 static ngx_command_t ngx_http_hdfs_commands[] = {
     {
@@ -131,7 +139,8 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
     hdfsFS          fs      = NULL;
     hdfsFile        file    = NULL;
     ngx_buf_t       *b      = NULL;
-    ngx_int_t       num     = 0, i, read_sofar;
+    ngx_int_t       num     = 0, i, j, read_sofar;
+    struct tm       *tm;
     char            buf[BUFSZ];
     hdfsFileInfo    *file_info = NULL;
     ngx_int_t       ret = NGX_OK, n;
@@ -282,7 +291,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
                         "get_and_head: handle_empty failed");
         }
-    } else if (file_info->mKind == kObjectKindDirectory) {
+    } else if (file_info->mKind == kObjectKindDirectory) { /* director */
         hdfsFreeFileInfo(file_info, num);
         if (!(file_info = hdfsListDirectory(fs, (char *)path, (int *)&num))) {
             if (num) {
@@ -305,19 +314,50 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
                         "get_and_head: handle_empty failed");
             goto clean;
         }
+
         for (head = NULL, i = 0; i < num; i++) {
             if ((b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t))) == NULL) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
                         "get_and_head: ngx_pcalloc failed");
                 continue;
             }
-            n = strlen(file_info[i].mName);
-            b->pos  = (u_char *)file_info[i].mName;
-            b->last = (u_char *)(file_info[i].mName + n + 1);
+            if (!(b->pos  = (u_char *)ngx_pcalloc(r->pool, MAXLINE))) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
+                        "get_and_head: ngx_pcalloc failed");
+                continue;
+            }
+            j = 0; /* next position of b->pos to write */
+            b->pos[j++] = file_info[i].mKind == kObjectKindFile ? '-' : 'd';
 
-            /* change '\0' to '\n' for beauty, so plus 1 */
-            file_info[i].mName[n] = '\n';
-            r->headers_out.content_length_n += n + 1;
+            /* file(dir) permission */
+            strncpy((char *)(b->pos + j),
+                    perm[(file_info[i].mPermissions >> 6) & 7], 3);
+            j += 3;
+            strncpy((char *)(b->pos + j),
+                    perm[(file_info[i].mPermissions >> 3) & 7], 3);
+            j += 3;
+            j += sprintf((char *)(b->pos + j), "%s   ", 
+                    perm[file_info[i].mPermissions & 7]);
+
+            /* owner and group of file(dir) */
+            j += sprintf((char *)(b->pos + j), "%s ", file_info[i].mOwner);
+            j += sprintf((char *)(b->pos + j), "%s ", file_info[i].mGroup);
+
+            /* file(dir) size */
+            sprintf(buf, "%d", (int32_t)file_info[i].mSize);
+            j += sprintf((char *)(b->pos + j), "%16s  ", buf);
+
+            /* file(dir) last modification time */
+            tm = localtime((time_t *)&file_info[i].mLastMod);
+            strftime(buf, sizeof(buf), "%F %R", tm);
+            j += sprintf((char *)(b->pos + j), "%16s  ", buf);
+
+            /* file(dir) name */
+            j += sprintf((char *)(b->pos + j), "%-32s\n", file_info[i].mName);
+
+            b->last = b->pos + j;
+
+            r->headers_out.content_length_n += j;
             b->memory   = 1;
             b->last_buf = 0;
 
@@ -344,7 +384,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
                     "get_and_head: output_filter failed");
     } else {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "get_and_head: "
-                "unknow mKine: file_info->mKind = %d\n", file_info->mKind);
+                "unknow mKind: file_info->mKind = %d\n", file_info->mKind);
         ret = NGX_ERROR;
         goto clean;
     }
