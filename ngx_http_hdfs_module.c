@@ -293,6 +293,11 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
         }
     } else if (file_info->mKind == kObjectKindDirectory) { /* director */
         hdfsFreeFileInfo(file_info, num);
+
+        r->headers_out.content_type.data    = (u_char *)"text/html";
+        r->headers_out.content_type.len     = sizeof("text/html") - 1;
+        r->headers_out.content_type_len     = sizeof("text/html") - 1;
+
         if (!(file_info = hdfsListDirectory(fs, (char *)path, (int *)&num))) {
             if (num) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -327,6 +332,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
                 continue;
             }
             j = 0; /* next position of b->pos to write */
+            j += sprintf((char *)(b->pos + j), "<pre>");
             b->pos[j++] = file_info[i].mKind == kObjectKindFile ? '-' : 'd';
 
             /* file(dir) permission */
@@ -353,7 +359,14 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
             j += sprintf((char *)(b->pos + j), "%16s  ", buf);
 
             /* file(dir) name */
-            j += sprintf((char *)(b->pos + j), "%-32s\n", file_info[i].mName);
+            sprintf(buf, "/hdfs%s", strstr((char *)file_info[i].mName,
+                        (char *)path));
+            j += sprintf((char *)(b->pos + j),
+                    "<a href=\"%s\""
+                    " style=\"text-decoration:none\">%-32s</a>",
+                    buf, file_info[i].mName);
+
+            j += sprintf((char *)(b->pos + j), "</pre>");
 
             b->last = b->pos + j;
 
