@@ -41,6 +41,7 @@ static u_char *ngx_http_hdfs_get_path(u_char *);
 static ngx_int_t ngx_http_hdfs_handle_empty(ngx_http_request_t *);
 static ngx_int_t ngx_http_hdfs_rd_chk(ngx_http_request_t *, hdfsFileInfo *,
         ngx_str_t *);
+static int ngx_http_hdfs_3rd_slash(const char *);
 
 static char *perm[] = {
     "---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx",
@@ -320,6 +321,7 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
             goto clean;
         }
 
+        n = -1;
         for (head = NULL, i = 0; i < num; i++) {
             if ((b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t))) == NULL) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
@@ -359,8 +361,9 @@ ngx_http_hdfs_get_and_head(ngx_http_request_t *r)
             j += sprintf((char *)(b->pos + j), "%16s  ", buf);
 
             /* file(dir) name */
-            sprintf(buf, "/hdfs%s", strstr((char *)file_info[i].mName,
-                        (char *)path));
+            if (n < 0)
+                n = ngx_http_hdfs_3rd_slash(file_info[i].mName);
+            sprintf(buf, "/hdfs%s", file_info[i].mName + n);
             j += sprintf((char *)(b->pos + j),
                     "<a href=\"%s\""
                     " style=\"text-decoration:none\">%-32s</a>",
@@ -538,6 +541,16 @@ ngx_http_hdfs_rd_chk(ngx_http_request_t *r, hdfsFileInfo *info,
             "rd_chk: file permission = %d, perm=%d, %d", info->mPermissions,
             perm, info->mPermissions >> 6);
     return(perm & 4);
+}
+
+static int
+ngx_http_hdfs_3rd_slash(const char *path)
+{
+    int i, j;
+    for (i = j = 0; j != 3; i++)
+        if (path[i] == '/')
+            j++;
+    return(i - 1);
 }
 
 /*
