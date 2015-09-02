@@ -1,4 +1,4 @@
-                                Niginx On HDFS
+                                Nginx On HDFS
 
 1. What It Is?
 
@@ -27,7 +27,7 @@ add two environment variables following to /etc/profile:
     export JRE_HOME=$JAVA_HOME/jre
 
 The value of JAVA_HOME and JRE_HOME is determined by JDK install path. The
-environment variables should be globaly visible, so we set them in
+environment variables should be globally visible, so we set them in
 /etc/profile, rather than ~/.bashrc.
 
 2.2.2 Hadoop
@@ -41,7 +41,7 @@ Decompress hadoop-2.6.0 to a directory. Add following environment variables to
     export CLASSPATH=$CLASSPATH:`$HADOOP_HOME/bin/hadoop classpath --glob`
 
 The value of environment variables is determined by installing path of
-software and the version. The environment variables should be globaly
+software and the version. The environment variables should be globally
 visible, so we set them in /etc/profile.
 
 2.3 Compile Nginx and Configure
@@ -100,7 +100,7 @@ context:   location
 This directive enabling nginx-hdfs module at a given location. The only
 required parameter is "namenode", for specifying the HDFS you want to use.
 "username" specifying the user name when connecting with HDFS. "port"
-specifys the port when connecting with HDFS. The more details you can
+specifies the port when connecting with HDFS. The more details you can
 reference hdfs.h in ${HADOOP_HOME}/include/hdfs.h, function
 hdfsBuilderSetNameNode(), hdfsBuilderSetUserName() and
 hdfsBuilderSetNameNodePort(). 
