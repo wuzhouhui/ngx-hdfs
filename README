@@ -107,7 +107,7 @@ hdfsBuilderSetNameNodePort().
 
 2.5.2 sample configuration
 
-    localhost /hdfs {
+    location /hdfs {
         hdfs namenode=default;
     }
 
